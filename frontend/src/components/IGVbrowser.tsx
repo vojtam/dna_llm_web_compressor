@@ -4,10 +4,8 @@ import ComputeButton from './ComputeButton';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card"
 
 interface IGVbrowserProps {
@@ -31,7 +29,7 @@ function IGVbrowser(props: IGVbrowserProps) {
     return "";
   });
 
-  const handleLocusChange = useCallback((referenceFrame) => {
+  const handleLocusChange = useCallback((referenceFrame: any) => {
     const frame = referenceFrame[0]
     console.log(referenceFrame)
     if (frame) {
@@ -60,8 +58,9 @@ function IGVbrowser(props: IGVbrowserProps) {
           console.log('IGV browser created');
 
           if (browserRef.current !== null) {
-            browserRef.current.on('locuschange', handleLocusChange);
-            const currentLocus = browserRef.current.currentLoci()[-1];
+            const current: any = browserRef.current;
+            current.on('locuschange', handleLocusChange);
+            const currentLocus = current.currentLoci()[-1];
             if (currentLocus) {
               handleLocusChange(currentLocus);
             }
@@ -77,7 +76,8 @@ function IGVbrowser(props: IGVbrowserProps) {
 
     return () => {
       if (browserRef.current) {
-        browserRef.current.removeAllEventListeners();
+        const current: any = browserRef.current;
+        current.removeAllEventListeners();
         igv.removeAllBrowsers();
         browserRef.current = null;
       }

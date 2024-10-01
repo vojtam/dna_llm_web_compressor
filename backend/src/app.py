@@ -3,6 +3,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from fastapi.staticfiles import StaticFiles
 from coder import run_encoding
 import logging
 
@@ -12,9 +13,12 @@ app = FastAPI(
     version="0.1"
 )
 
+
 origins = [
-    'http://localhost:3000',
-    'http://localhost:5173'
+    'http://localhost:8000/encode',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000/',
+    'http://127.0.0.1:5173/' 
 ]
 
 app.add_middleware(
@@ -24,6 +28,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 
 @app.exception_handler(RequestValidationError)
@@ -38,7 +43,9 @@ class LocusInput(BaseModel):
 
 @app.post('/encode', description="Encode human GRCh38 DNA")
 def encode(locus: LocusInput):
-    result = run_encoding(locus.locus)
-    return {"content": f"The sequence was compressed by {result:0.3f}%", "status_code":200}
+    percentage, complexity, lz_complexity = run_encoding(locus.locus)
+    return {"percentage": percentage, "complexity": complexity, "lz_complexity": lz_complexity, "status_code":200}
 
-
+@app.get('/')
+def hello():
+     return {"content": f"Hello from the API", "status_code": 200}

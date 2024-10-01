@@ -7,6 +7,7 @@ export const useEncode = () => {
         if (response.status !== 200) {
             return null;
         }
+        console.log(response)
         return response
     }
     const mutation = useMutation({

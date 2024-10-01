@@ -164,13 +164,53 @@ def parse_locus_string(locus_str: str):
     end = int(loc_range[1][:loc_range[1].index('.')])
     return (chr, start, end)
 
+def seq_complexity(dna_seq: str) -> float:
+    max_unique_per_kmer = {
+        k : 4 ** k if len(dna_seq) >= 4 ** k else len(dna_seq) - (k - 1) for k in range(1, 8)
+    }
+    kmer_counts = { k : set() for k in range(1, 8) }
+    for k in range(1, 8):
+        for i in range(len(dna_seq)):
+            kmer = dna_seq[i : i + k]
+            if len(kmer) == k:
+                kmer_counts[k].add(kmer)
+    result = torch.tensor([len(kmer_counts[k]) / max_unique_per_kmer[k] for k in range(1, 8)]).prod().item()
+    return result
+
+def LZcomplexity(sequence):
+    complexity = 1
+    prefix_length = 1
+    length_component = 1
+    max_length_component = 1
+    pointer = 0
+
+    while prefix_length + length_component <= len(sequence):
+        if sequence[pointer + length_component - 1] == sequence[prefix_length + length_component - 1]:
+            length_component += 1
+        else:
+            max_length_component = max(length_component, max_length_component)
+            pointer += 1
+
+            if pointer == prefix_length:
+                complexity += 1
+                prefix_length += max_length_component
+
+                pointer = 0
+                max_length_component = 1
+            length_component = 1
+    if length_component != 1:
+        complexity += 1
+    return complexity
+
 def run_encoding(locus_str: str):
     chr, start, end = parse_locus_string(locus_str)
     #print(chr, start, end)
     dna_seq = get_sequence_ensembl(chr, start, end)
     #print(dna_seq)
+    complexity = seq_complexity(dna_seq)
+    lz_complexity = LZcomplexity(dna_seq)
     compression_percent = encode(dna_seq)
-    return compression_percent
+    return (compression_percent, complexity, lz_complexity)
 
 
 

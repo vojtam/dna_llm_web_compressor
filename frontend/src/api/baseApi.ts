@@ -1,6 +1,6 @@
-import axios, {AxiosRequestConfig, AxiosResponse} from 'axios';
-import {ApiResponse, ApiResponseMultiple, ApiResponseMultiplePaginated, ApiResponseSingle} from "./types.ts";
-export const BASE_API_URL = "http://localhost:8000";
+import axios, {AxiosRequestConfig } from 'axios';
+import { ApiResponseMultiple, ApiResponseMultiplePaginated, ApiResponseSingle } from "./types.ts";
+export const BASE_API_URL = "https://vojtam-dna-llm-compressor.hf.space";
 
 const axiosInstance = axios.create({
     baseURL: BASE_API_URL

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useEncode } from "../hooks/useEncode";
 import { useToast } from "../hooks/use-toast";
 import {
@@ -22,13 +22,17 @@ interface ComputeButtonProps {
 }
 
 export function ComputeButton(props: ComputeButtonProps) {
-    const [encodedResponse, setEncodedResponse] = useState('');
+    const [percentageResponse, setPercentageResponse] = useState('');
+    const [complexityResponse, setComplexityResponse] = useState('');
+    const [LZcomplexityResponse, setLZcomplexityResponse] = useState('');
     const { toast } = useToast();
     const { mutateAsync: encodeSeq, isPending, isError, error } = useEncode();
 
     const handleClick = async () => {
         console.log("Handling click...");
-        setEncodedResponse('')
+        setPercentageResponse('')
+        setLZcomplexityResponse('')
+        setComplexityResponse('')
         try {
             toast({
                 title: "Encoding Starting",
@@ -37,7 +41,14 @@ export function ComputeButton(props: ComputeButtonProps) {
             });
             const response = await encodeSeq(props.locus);
             console.log("Response:", response);
-            setEncodedResponse(response?.data.content);
+            const data: any = response?.data;
+            const percentage = data.percentage.toFixed(3)
+            const complexity = data.complexity.toFixed(3)
+            const lzComplexity = data.lz_complexity
+            
+            setPercentageResponse("The sequence was compressed by " + percentage + "%");
+            setComplexityResponse("The sequence complexity is " + complexity);
+            setLZcomplexityResponse("The Lempel-Ziv complexity is " + lzComplexity);
 
             // Show success toast
             toast({
@@ -47,7 +58,7 @@ export function ComputeButton(props: ComputeButtonProps) {
             });
         } catch (error) {
             console.error("Error:", error);
-            setEncodedResponse("An error occurred");
+            setPercentageResponse("An error occurred");
             
             // Show error toast
             toast({
@@ -87,7 +98,11 @@ export function ComputeButton(props: ComputeButtonProps) {
                 <CardFooter>
                     {isPending && <p className="text-gray-600">Encoding in progress...</p>}
                     {isError && <p className="text-red-500">Error: {(error as Error).message}</p>}
-                    {encodedResponse && <h3 className="text-lg font-semibold">{encodedResponse}</h3>}
+                    <div className=" w-full flex flex-col justify-center items-center">
+                        {percentageResponse && <h3 className="text-lg font-semibold">{percentageResponse}</h3>}
+                        {complexityResponse && <h3 className="text-lg font-semibold">{complexityResponse}</h3>}
+                        {LZcomplexityResponse && <h3 className="text-lg font-semibold">{LZcomplexityResponse}</h3>}
+                    </div>
                 </CardFooter>
             </Card>
 
