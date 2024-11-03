@@ -145,9 +145,11 @@ def compression_percentage(compressed: List[int], uncompresed: str | List[int], 
     percentage = (1 - (len(compressed) * np.log2(2)) / (len(uncompresed) * np.log2(uncompressed_vocab_size))) * 100
     return percentage
 
-def encode(dna_seq: str):
-    input_ids = tokenizer.encode(dna_seq, return_tensors='pt').tolist()[0]
-    cdfs = precompute_cdfs_batch(input_ids)
+def encode(dna_seq: str, cdfs = None, input_ids = None):
+    if cdfs is None or input_ids is None:
+        print("NO CDFS")
+        input_ids = tokenizer.encode(dna_seq, return_tensors='pt').tolist()[0]
+        cdfs = precompute_cdfs_batch(input_ids)
 
     languageModel = LanguageModel(cdfs, list(range(TOKENIZER_VOCAB_SIZE)))
     coder = Coder(languageModel, state_bits = 64,  reset_model_after_finish=True)
@@ -202,14 +204,14 @@ def LZcomplexity(sequence):
         complexity += 1
     return complexity
 
-def run_encoding(locus_str: str):
+def run_encoding(locus_str: str, cdfs = None, input_ids = None):
     chr, start, end = parse_locus_string(locus_str)
     #print(chr, start, end)
     dna_seq = get_sequence_ensembl(chr, start, end)
     #print(dna_seq)
     complexity = seq_complexity(dna_seq)
     lz_complexity = LZcomplexity(dna_seq)
-    compression_percent = encode(dna_seq)
+    compression_percent = encode(dna_seq, cdfs, input_ids)
     return (compression_percent, complexity, lz_complexity)
 
 

@@ -1,27 +1,26 @@
-import { useRef, useEffect, useState, useCallback } from 'react'
-import igv from 'igv';
-import ComputeButton from './ComputeButton';
+import { useRef, useEffect, useState, useCallback } from "react";
+import igv from "igv";
+import ComputeButton from "./ComputeButton";
 import {
   Card,
   CardContent,
   CardFooter,
   CardHeader,
-} from "@/components/ui/card"
+} from "@/components/ui/card";
 
 interface IGVbrowserProps {
   options: {
-      genome: string,
-      locus: string,
-      tracks: {name: string, url: string, indexURL: string, format: string}[]
-  }
+    genome: string;
+    locus: string;
+    tracks: { name: string; url: string; indexURL: string; format: string }[];
+  };
 }
 
 function IGVbrowser(props: IGVbrowserProps) {
   const igvContainer = useRef(null);
   const browserRef = useRef(null);
 
-
-    const [currentLocus, setCurrentLocus] = useState(() => {
+  const [currentLocus, setCurrentLocus] = useState(() => {
     // Initialize currentRegion from options.locus
     if (props.options.locus) {
       return props.options.locus;
@@ -30,10 +29,10 @@ function IGVbrowser(props: IGVbrowserProps) {
   });
 
   const handleLocusChange = useCallback((referenceFrame: any) => {
-    const frame = referenceFrame[0]
-    console.log(referenceFrame)
+    const frame = referenceFrame[0];
+    console.log(frame);
     if (frame) {
-      setCurrentLocus(frame.chr + ':' + frame.start + '-' + frame.end );
+      setCurrentLocus(frame.chr + ":" + frame.start + "-" + frame.end);
     }
   }, []);
 
@@ -46,28 +45,31 @@ function IGVbrowser(props: IGVbrowserProps) {
             ...props.options,
             tracks: [
               {
-                name: 'Reference sequence',
-                type: 'sequence',
-                order: -1.0
+                name: "Reference sequence",
+                type: "sequence",
+                order: -1.0,
               },
-              ...(props.options.tracks || [])
-            ]
+              ...(props.options.tracks || []),
+            ],
           };
 
-          browserRef.current = await igv.createBrowser(igvContainer.current, updatedOptions);
-          console.log('IGV browser created');
+          browserRef.current = await igv.createBrowser(
+            igvContainer.current,
+            updatedOptions
+          );
+          console.log("IGV browser created");
 
           if (browserRef.current !== null) {
             const current: any = browserRef.current;
-            current.on('locuschange', handleLocusChange);
+            console.log(current);
+            current.on("locuschange", handleLocusChange);
             const currentLocus = current.currentLoci()[-1];
             if (currentLocus) {
               handleLocusChange(currentLocus);
             }
           }
-
         } catch (error) {
-          console.error('Error creating IGV browser:', error);
+          console.error("Error creating IGV browser:", error);
         }
       }
     };
@@ -87,26 +89,21 @@ function IGVbrowser(props: IGVbrowserProps) {
   return (
     <Card>
       <CardHeader>
-
-        <h1 className='text-3xl font-semibold'>LLM DNA compression</h1>
+        <h1 className="text-3xl font-semibold">LLM DNA compression</h1>
       </CardHeader>
       <CardContent>
-
         <div ref={igvContainer} />
       </CardContent>
-      <CardFooter className='flex justify-center items-center'>
+      <CardFooter className="flex justify-center items-center">
         {currentLocus && (
           <div>
-            <h3>
-              Current Region: {currentLocus}
-            </h3>
-            <ComputeButton locus={currentLocus}/>
+            <h3>Current Region: {currentLocus}</h3>
+            <ComputeButton locus={currentLocus} />
           </div>
         )}
       </CardFooter>
-        
-      </Card>
-  )
+    </Card>
+  );
 }
 
-export default IGVbrowser
+export default IGVbrowser;

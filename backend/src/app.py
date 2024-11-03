@@ -6,6 +6,9 @@ from pydantic import BaseModel
 from fastapi.staticfiles import StaticFiles
 from coder import run_encoding
 import logging
+from coder import parse_locus_string
+import polars as pl
+import numpy as np
 
 app = FastAPI(
     title="DNA Arithmetic Coding Compression",
@@ -13,10 +16,36 @@ app = FastAPI(
     version="0.1"
 )
 
+bed_df = pl.read_csv("chr22_tokenized.bed", separator="\t", has_header=False, new_columns=["chr", "start", "end", "value", "index"])
+
+def load_array_slice(filename, shape, dtype, start_row=None, end_row=None):
+    """
+    Load a slice of a memory-mapped numpy array.
+    
+    Parameters:
+    filename: str - The file containing the array
+    shape: tuple - The shape of the full array
+    dtype: numpy.dtype - The data type of the array
+    start_row: int - Starting row index (optional)
+    end_row: int - Ending row index (optional)
+    
+    Returns:
+    numpy.ndarray - The requested slice of the array
+    """
+    # Create memory map to file
+    fp = np.memmap(filename, dtype=dtype, mode='r', shape=shape)
+    
+    # If no slice specified, return view of entire array
+    if start_row is None and end_row is None:
+        return fp
+    
+    # Return specific slice
+    return fp[start_row:end_row].copy()
 
 origins = [
     'http://localhost:8000/encode',
     'http://localhost:8000',
+    'http://localhost:5173',
     'http://127.0.0.1:8000/',
     'http://127.0.0.1:5173/' 
 ]
@@ -43,7 +72,23 @@ class LocusInput(BaseModel):
 
 @app.post('/encode', description="Encode human GRCh38 DNA")
 def encode(locus: LocusInput):
-    percentage, complexity, lz_complexity = run_encoding(locus.locus)
+    chr, start, end = parse_locus_string(locus.locus)
+
+    if chr == "22":
+        filtered_df = bed_df.filter(
+            (pl.col("chr") == int(chr)) &
+            (pl.col("start") <= end) &  # Interval starts before or at the given end
+            (pl.col("end") >= start)    # Interval ends after or at the given start
+        )
+
+        start_index = filtered_df.row(0, named=True)['index']
+        end_index = filtered_df.tail(1).select("index").item() + 1
+
+        cdfs = load_array_slice("chr22_cdfs.mmap", (8892283, 1001), np.uint16, start_index, end_index)
+        input_ids = filtered_df["value"].to_list()
+        percentage, complexity, lz_complexity = run_encoding(locus.locus, cdfs, input_ids)
+    else:
+        percentage, complexity, lz_complexity = run_encoding(locus.locus)
     return {"percentage": percentage, "complexity": complexity, "lz_complexity": lz_complexity, "status_code":200}
 
 @app.get('/')
